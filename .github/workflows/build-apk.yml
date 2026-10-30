@@ -47,6 +47,9 @@ jobs:
       - name: Apply launcher icons
         run: cp -r resources/res/. android/app/src/main/res/
 
+      - name: Add the native file plugin and "Open with" support
+        run: python3 scripts/patch-android.py
+
       - name: Sync plugins and web assets
         run: npx cap sync android
 
