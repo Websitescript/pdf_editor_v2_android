@@ -1,0 +1,57 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PDF_Editor_Android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack the project zip
+        working-directory: .
+        run: unzip -q PDF_Editor_Android_Project.zip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Package the web app
+        run: npm run build:www
+
+      - name: Create the Android project
+        run: npx cap add android
+
+      - name: Apply launcher icons
+        run: cp -r resources/res/. android/app/src/main/res/
+
+      - name: Sync plugins and web assets
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: PDF_Editor_Android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Editor-APK
+          path: PDF_Editor_Android/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
